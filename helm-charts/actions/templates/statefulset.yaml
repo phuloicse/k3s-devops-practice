@@ -1,0 +1,140 @@
+{{- if .Values.enabled }}
+{{- $secretName := include "gitea.actions.workername" (dict "global" . "worker" "actions-token") }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    {{- include "gitea.actions.labels.actRunner" . | nindent 4 }}
+    {{- with .Values.statefulset.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  annotations:
+    {{- with .Values.statefulset.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "gitea.actions.fullname" . }}-act-runner
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  replicas: {{ .Values.statefulset.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "gitea.actions.selectorLabels.actRunner" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config-act-runner.yaml") . | sha256sum }}
+      labels:
+        {{- include "gitea.actions.labels.actRunner" . | nindent 8 }}
+        {{- with .Values.statefulset.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      securityContext:
+        {{- toYaml .Values.statefulset.securityContext | nindent 8 }}
+      initContainers:
+        - name: init-gitea
+          image: "{{ include "gitea.actions.init.image" . }}"
+          command:
+            - sh
+            - -c
+            - |
+              echo 'Trying to reach Gitea on {{ include "gitea.actions.local_root_url" . }}'
+              until timeout 10 wget --no-check-certificate --spider {{ include "gitea.actions.local_root_url" . }}; do
+                sleep 3
+                echo "Trying again in 3 seconds..."
+              done
+              echo "Gitea has been reached!"
+      containers:
+        - name: act-runner
+          image: "{{ include "gitea.actions.actRunner.image" . }}"
+          imagePullPolicy: {{ .Values.statefulset.actRunner.pullPolicy }}
+          workingDir: /data
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2376
+            - name: DOCKER_TLS_VERIFY
+              value: "1"
+            - name: DOCKER_CERT_PATH
+              value: /certs/client
+            - name: GITEA_RUNNER_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.existingSecret | default $secretName }}"
+                  key: "{{ .Values.existingSecretKey | default "token" }}"
+            - name: GITEA_INSTANCE_URL
+              value: {{ include "gitea.actions.local_root_url" . }}
+            - name: CONFIG_FILE
+              value: /actrunner/config.yaml
+            - name: TZ
+              value: {{ .Values.statefulset.timezone | default "Etc/UTC" }}
+            {{- if .Values.statefulset.actRunner.extraEnvs }}
+            {{- toYaml .Values.statefulset.actRunner.extraEnvs | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.statefulset.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /actrunner/config.yaml
+              name: act-runner-config
+              subPath: config.yaml
+            - mountPath: /certs/client
+              name: docker-certs
+            - mountPath: /data
+              name: data-act-runner
+            {{- with .Values.statefulset.actRunner.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        - name: dind
+          image: "{{ include "gitea.actions.dind.image" . }}"
+          imagePullPolicy: {{ .Values.statefulset.dind.pullPolicy }}
+          env:
+            - name: DOCKER_HOST
+              value: tcp://127.0.0.1:2376
+            - name: DOCKER_TLS_VERIFY
+              value: "1"
+            - name: DOCKER_CERT_PATH
+              value: /certs/client
+            {{- if .Values.statefulset.dind.extraEnvs }}
+            {{- toYaml .Values.statefulset.dind.extraEnvs | nindent 12 }}
+            {{- end }}
+          securityContext:
+            privileged: true
+          resources:
+            {{- toYaml .Values.statefulset.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /certs/client
+              name: docker-certs
+            {{- with .Values.statefulset.dind.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- range $key, $value := .Values.statefulset.nodeSelector }}
+      nodeSelector:
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+      {{- with .Values.statefulset.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.statefulset.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: act-runner-config
+          configMap:
+            name: {{ include "gitea.actions.fullname" . }}-act-runner-config
+        - name: docker-certs
+          emptyDir: {}
+        {{- with .Values.statefulset.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data-act-runner
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        {{- include "gitea.actions.persistence.storageClass" . | nindent 8 }}
+        resources:
+          requests:
+            storage: {{ .Values.statefulset.persistence.size }}
+{{- end }}
