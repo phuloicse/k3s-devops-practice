@@ -1,0 +1,38 @@
+mode: standalone
+replicas: 1
+rootUser: admin
+rootPassword: admin123
+
+service:
+  type: NodePort
+  clusterIP: ~
+  port: "9000"
+  nodePort: 31121
+consoleService:
+  type: NodePort
+  nodePort: 31120
+  port: 9001
+users:
+  - accessKey: logs-user
+    secretKey: logsuser
+    policy: readwrite
+persistence:
+  size: 15Gi
+resources:
+  requests:
+    memory: "256Mi"  
+    cpu: "100m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+  # should declare values as the same as bucket of loki above
+buckets:
+  - name: chunks
+    policy: none
+    purge: false
+  - name: ruler
+    policy: none
+    purge: false
+  - name: admin
+    policy: none
+    purge: false

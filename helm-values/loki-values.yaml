@@ -1,0 +1,68 @@
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: s3
+    bucketNames:
+        # Minio use default name
+        chunks: chunks
+        ruler: ruler
+        admin: admin
+        # Other storage place use unique name not default
+        # chunks: loki-chunks
+        # ruler: loki-ruler
+        # admin: loki-admin
+    s3:
+      s3ForcePathStyle: true 
+      endpoint: http://minio.minio.svc.cluster.local:9000
+      insecure: true 
+      region: us-east-1
+      accessKeyId: logs-user
+      secretAccessKey: logsuser
+  schemaConfig:
+    configs:
+      - from: 2020-10-24
+        store: tsdb
+        object_store: s3       
+        schema: v13           
+        index:
+          prefix: index_
+          period: 24h          
+        chunks:
+          prefix: chunk_
+          period: 24h
+  ui:
+    enabled: true
+gateway:
+  service:
+    type: NodePort
+    nodePort: 31111
+deploymentMode: SingleBinary
+singleBinary:
+  replicas: 1
+
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+# ingester:
+#   replicas: 0
+# querier:
+#   replicas: 0
+# queryFrontend:
+#   replicas: 0
+# queryScheduler:
+#   replicas: 0
+# distributor:
+#   replicas: 0
+# compactor:
+#   replicas: 0
+# indexGateway:
+#   replicas: 0
+# bloomCompactor:
+#   replicas: 0
+# bloomGateway:
+#   replicas: 0

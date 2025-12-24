@@ -1,0 +1,22 @@
+ui:
+  service:
+    type: NodePort
+    port: 80
+    targetPort: 80
+    nodePort: 31140
+
+registry:
+  enabled: true
+  auth:
+    basic:
+      enabled: false
+  service:
+    type: NodePort
+    port: 5000
+    targetPort: 5000
+    nodePort: 31141
+  dataVolume: 
+    persistentVolumeClaim:
+      claimName: docker-registry-pvc
+
+

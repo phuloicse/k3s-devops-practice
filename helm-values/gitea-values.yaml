@@ -1,0 +1,36 @@
+service:
+  http:
+    type: NodePort
+    port: 3000
+    nodePort: 31130
+  ssh:
+    type: NodePort
+    port: 3000
+    nodePort: 31131
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
+valkey-cluster:
+  enabled: false
+valkey:
+  enabled: true
+postgresql:
+  enabled: true
+postgresql-ha:
+  enabled: false
+
+persistence:
+  enabled: true
+
+gitea:
+    admin:
+      username: admin
+      password: admin123
+      passwordMode: initialOnlyNoReset
+

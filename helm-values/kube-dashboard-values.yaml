@@ -1,0 +1,10 @@
+kong:
+  # enabled: false
+  proxy:
+    type: NodePort
+    http:
+      enabled: true
+      nodePort: 31101
+    tls:
+      enabled: true
+      nodePort: 31100
