@@ -1,0 +1,173 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k3s-testing-app-v11
+  labels:
+    app: k3s-testing-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k3s-testing-app
+  template:
+    metadata:
+      labels:
+        app: k3s-testing-app
+        version: v1
+    spec:
+      containers:
+        - name: k3s-testing-app
+          image: container-registry-docker-registry-ui-registry-server.container-registry.svc.cluster.local:5000/testing-nodejs:1.0.2
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: APP_NAME
+              value: "app No.11"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k3s-testing-app-v12
+  labels:
+    app: k3s-testing-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k3s-testing-app
+  template:
+    metadata:
+      labels:
+        app: k3s-testing-app
+        version: v2
+    spec:
+      containers:
+        - name: k3s-testing-app
+          image: container-registry-docker-registry-ui-registry-server.container-registry.svc.cluster.local:5000/testing-nodejs:1.0.2
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: APP_NAME
+              value: "app No.12"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k3s-testing-app
+spec:
+  selector:
+    app: k3s-testing-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      nodePort: 32000
+  type: NodePort
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k3s-nodejs-app-v21
+  labels:
+    app: k3s-nodejs-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k3s-nodejs-app
+  template:
+    metadata:
+      labels:
+        app: k3s-nodejs-app
+        version: v2
+    spec:
+      containers:
+        - name: k3s-nodejs-app
+          image: container-registry-docker-registry-ui-registry-server.container-registry.svc.cluster.local:5000/testing-nodejs:1.0.2
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: APP_NAME
+              value: "app No.21"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k3s-nodejs-app-v22
+  labels:
+    app: k3s-nodejs-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k3s-nodejs-app
+  template:
+    metadata:
+      labels:
+        app: k3s-nodejs-app
+        version: v2
+    spec:
+      containers:
+        - name: k3s-nodejs-app
+          image: container-registry-docker-registry-ui-registry-server.container-registry.svc.cluster.local:5000/testing-nodejs:1.0.2
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: APP_NAME
+              value: "app No.22"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: k3s-nodejs-app
+spec:
+  selector:
+    app: k3s-nodejs-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+      nodePort: 32001
+  type: NodePort
